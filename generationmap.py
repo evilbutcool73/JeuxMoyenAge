@@ -1,31 +1,56 @@
 import numpy as np
 import tkinter as tk
 from perlin_noise import PerlinNoise
-from random import randint
+import random
 from Case import Case
 from TYPE import TYPE 
 from math import sqrt
 from Seigneur import Seigneur
+import matplotlib.pyplot as plt
 
 # Générer la grille de bruit de Perlin
-def generate_perlin_noise(width, height, scale):
-    noise = PerlinNoise(octaves=6)
-    noise_grid = np.zeros((height, width))
+# def generate_perlin_noise(width, height, scale):
+#     noise = PerlinNoise(octaves=6)
+#     noise_grid = np.zeros((height, width))
+#     for i in range(height):
+#         for j in range(width):
+#             x = i / scale
+#             y = j / scale
+#             noise_value = noise([x, y])
+#             noise_grid[i][j] = noise_value
+#     return noise_grid
+def generate_perlin_noise(width, height, seed=None):
+    noise1 = PerlinNoise(octaves=3, seed = seed)
+    noise2 = PerlinNoise(octaves=6, seed= seed)
+    noise3 = PerlinNoise(octaves=12, seed=seed)
+    noise4 = PerlinNoise(octaves=24, seed=seed)
+
+    
+    pic = []
     for i in range(height):
+        row = []
         for j in range(width):
-            x = i / scale
-            y = j / scale
-            noise_value = noise([x, y])
-            noise_grid[i][j] = noise_value
-    return noise_grid
+            noise_val = noise1([i/width, j/height])
+            noise_val += 0.5 * noise2([i/width, j/height])
+            noise_val += 0.25 * noise3([i/width, j/height])
+            noise_val += 0.125 * noise4([i/width, j/height])
+
+            row.append(noise_val)
+        pic.append(row)
+    # plt.imshow(pic, cmap='gray')
+    # plt.show()
+    return pic
+    
 
 # Fonction pour placer les villages
-def place_villages(map, nb_village, width, height, liste_joueur):
+def place_villages(map, nb_village, width, height, liste_joueur, seed = None):
+    if seed is not None:
+        random.seed(seed)
     lvillage=[] #liste des tuples des pos des villages
     for _ in range(nb_village):
         # Choisir des coordonnées aléatoires pour le village
-        x_central = randint(3, height - 4)
-        y_central = randint(3, width - 4) # pas de village trop au bord
+        x_central = random.randint(3, height - 4)
+        y_central = random.randint(3, width - 4) # pas de village trop au bord
         for i in lvillage:
             while sqrt(((x_central-i[0])**2)+((y_central-i[1])**2)) < 4 : 
                 x_central = randint(3, height - 4)
@@ -51,7 +76,8 @@ def place_villages(map, nb_village, width, height, liste_joueur):
 # Générer la carte avec les types de terrain
 def generate_map(width, height, scale, nb_village, liste_joueur):
     # Générer le bruit de Perlin
-    perlin_noise = generate_perlin_noise(width, height, scale)
+    seed = 15153
+    perlin_noise = generate_perlin_noise(width, height,seed )
     map = []
     # Parcourir la grille de bruit et assigner les types de terrain
     for i in range(height):
@@ -60,17 +86,23 @@ def generate_map(width, height, scale, nb_village, liste_joueur):
             noise_value = perlin_noise[i][j]
 
             # Traitement du bruit
-            if noise_value < -0.3:
+            if noise_value < -0.4:
+                row.append(Case(i, j, TYPE.montagneclair))
+            elif noise_value < -0.25:
                 row.append(Case(i, j, TYPE.montagne))
             elif -0.1 <= noise_value < 0:
                 row.append(Case(i, j, TYPE.foret))
+            elif -0.15<= noise_value < -0.1 or 0 < noise_value <= 0.05:
+                row.append(Case(i, j, TYPE.foretclair))
             elif noise_value > 0.3:
                 row.append(Case(i, j, TYPE.eau))
+            elif noise_value > 0.25:
+                row.append(Case(i, j, TYPE.eauclair))
             else:
                 row.append(Case(i, j, TYPE.plaine))
         map.append(row)
 
-    place_villages(map, nb_village, width, height, liste_joueur)
+    place_villages(map, nb_village, width, height, liste_joueur,seed )
     return map
 
 # Affichage de la carte avec tkinter
@@ -85,10 +117,13 @@ def show_map(map, cell_size):
     
     # Définir les couleurs pour chaque type de terrain
     colors = {
-        TYPE.plaine: "lightgreen",
+        TYPE.plaine: "palegoldenrod",
         TYPE.montagne: "gray",
-        TYPE.eau: "blue",
+        TYPE.montagneclair: "lightgray",
+        TYPE.eau: "steelblue",
+        TYPE.eauclair: "lightskyblue",
         TYPE.foret: "darkgreen",
+        TYPE.foretclair: "forestgreen",
         TYPE.village: "brown"
     }
     
@@ -116,8 +151,8 @@ def show_map(map, cell_size):
     root.mainloop()
 
 # Exemple d'utilisation
-width, height, scale, nb_village = 15, 15, 10.0, 2
-cell_size = 50  # Taille de chaque cellule dans la fenêtre
+width, height, scale, nb_village = 40, 40, 10.0, 2
+cell_size = 25 # Taille de chaque cellule dans la fenêtre
 P1= Seigneur("main","cara",18,120,5,200,"red")
 P2= Seigneur("bot","cara",18,120,5,200,"violet")
 liste_joueur=[P1,P2]

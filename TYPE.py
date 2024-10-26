@@ -6,3 +6,6 @@ class TYPE(Enum):
     foret = "forêt"
     montagne = "montagne"
     village = "village"
+    foretclair = "foretclair"
+    eauclair= "eauclair"
+    montagneclair = "montagneclair"
