@@ -9,16 +9,6 @@ from Seigneur import Seigneur
 import matplotlib.pyplot as plt
 
 # Générer la grille de bruit de Perlin
-# def generate_perlin_noise(width, height, scale):
-#     noise = PerlinNoise(octaves=6)
-#     noise_grid = np.zeros((height, width))
-#     for i in range(height):
-#         for j in range(width):
-#             x = i / scale
-#             y = j / scale
-#             noise_value = noise([x, y])
-#             noise_grid[i][j] = noise_value
-#     return noise_grid
 def generate_perlin_noise(width, height, seed=None):
     noise1 = PerlinNoise(octaves=3, seed = seed)
     noise2 = PerlinNoise(octaves=6, seed= seed)
@@ -30,10 +20,10 @@ def generate_perlin_noise(width, height, seed=None):
     for i in range(height):
         row = []
         for j in range(width):
-            noise_val = noise1([i/width, j/height])
-            noise_val += 0.5 * noise2([i/width, j/height])
-            noise_val += 0.25 * noise3([i/width, j/height])
-            noise_val += 0.125 * noise4([i/width, j/height])
+            noise_val = noise1([i/height, j/width])
+            noise_val += 0.5 *noise2([i/height, j/width])
+            noise_val += 0.25 * noise3([i/height, j/width])
+            noise_val += 0.125 * noise4([i/height, j/width])
 
             row.append(noise_val)
         pic.append(row)
@@ -53,8 +43,8 @@ def place_villages(map, nb_village, width, height, liste_joueur, seed = None):
         y_central = random.randint(3, width - 4) # pas de village trop au bord
         for i in lvillage:
             while sqrt(((x_central-i[0])**2)+((y_central-i[1])**2)) < 4 : 
-                x_central = randint(3, height - 4)
-                y_central = randint(3, width - 4)
+                x_central = random.randint(3, height - 4)
+                y_central = random.randint(3, width - 4)
 
         lvillage.append((x_central,y_central))
         proprio = liste_joueur.pop()
@@ -74,16 +64,16 @@ def place_villages(map, nb_village, width, height, liste_joueur, seed = None):
 
 
 # Générer la carte avec les types de terrain
-def generate_map(width, height, scale, nb_village, liste_joueur):
+def generate_map(width, height, nb_village, liste_joueur, seed):
+    
     # Générer le bruit de Perlin
-    seed = 15153
     perlin_noise = generate_perlin_noise(width, height,seed )
     map = []
     # Parcourir la grille de bruit et assigner les types de terrain
-    for i in range(height):
+    for j in range(height):
         row = []
-        for j in range(width):
-            noise_value = perlin_noise[i][j]
+        for i in range(width):
+            noise_value = perlin_noise[j][i]
 
             # Traitement du bruit
             if noise_value < -0.4:
@@ -106,13 +96,13 @@ def generate_map(width, height, scale, nb_village, liste_joueur):
     return map
 
 # Affichage de la carte avec tkinter
-def show_map(map, cell_size):
+def show_map(map, width , height, cell_size):
     # Créer la fenêtre principale
     root = tk.Tk()
     root.title("Carte")
     
     # Créer un Canvas pour dessiner la carte
-    canvas = tk.Canvas(root, width=width * cell_size, height=height * cell_size)
+    canvas = tk.Canvas(root , height=height * cell_size , width=width * cell_size)
     canvas.pack()
     
     # Définir les couleurs pour chaque type de terrain
@@ -126,10 +116,10 @@ def show_map(map, cell_size):
         TYPE.foretclair: "forestgreen",
         TYPE.village: "brown"
     }
-    
+    print(map)
     # Dessiner chaque cellule de la carte
-    for l in map:
-        for c in l:
+    for h in map:
+        for c in h:
             color = colors.get(c.type, "white")  # Obtenir la couleur correspondante sinon white
             x0 = c.x * cell_size
             y0 = c.y * cell_size
@@ -151,10 +141,13 @@ def show_map(map, cell_size):
     root.mainloop()
 
 # Exemple d'utilisation
-width, height, scale, nb_village = 40, 40, 10.0, 2
-cell_size = 25 # Taille de chaque cellule dans la fenêtre
+width= 60
+height = 40
+nb_village = 2
+seed = 15153
+cell_size = 10 # Taille de chaque cellule dans la fenêtre
 P1= Seigneur("main","cara",18,120,5,200,"red")
 P2= Seigneur("bot","cara",18,120,5,200,"violet")
 liste_joueur=[P1,P2]
-map = generate_map(width, height, scale, nb_village, liste_joueur)    
-show_map(map, cell_size)
+map = generate_map(width, height, nb_village, liste_joueur, seed)    
+show_map(map,width,height, cell_size)
